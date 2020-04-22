@@ -2,9 +2,8 @@ package com.amiao.oauth_backend.service;
 
 import com.amiao.oauth_backend.entity.OAuthRequest;
 import com.amiao.oauth_backend.entity.OAuthResponse;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import com.amiao.oauth_backend.entity.UserInfoResponseByToken;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,18 +15,31 @@ public class OAuthServiceImpl {
     private RestTemplate restTemplate = new RestTemplate();
 
     public String getAccessTokenFromGithub(String code) {
-        OAuthResponse response = restTemplate.postForObject(REQUEST_TOKEN_URL, buildHttpEntity(new OAuthRequest(CLIENT_ID, CLIENT_SECRET, code)), OAuthResponse.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("Accept", MediaType.APPLICATION_JSON.toString());
+
+        HttpEntity<Object> requestEntity = new HttpEntity<Object>(
+                new OAuthRequest(CLIENT_ID, CLIENT_SECRET, code),
+                headers);
+
+        OAuthResponse response = restTemplate.postForObject(
+                REQUEST_TOKEN_URL,
+                requestEntity,
+                OAuthResponse.class);
         return response.getAccess_token();
     }
 
-    private HttpEntity<Object> buildHttpEntity(OAuthRequest oAuthRequest) {
-        return new HttpEntity<Object>(oAuthRequest, buildHeaders());
-    }
+    public UserInfoResponseByToken getUserInfoFromGithub(String accessTokenFromGithub) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+        httpHeaders.add("Accept", MediaType.APPLICATION_JSON.toString());
+        httpHeaders.add("Authorization", "token " + accessTokenFromGithub);
 
-    private HttpHeaders buildHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
-        headers.add("Accept", MediaType.APPLICATION_JSON.toString());
-        return headers;
+        HttpEntity<Object> entity = new HttpEntity<>("parameters", httpHeaders);
+
+        ResponseEntity<UserInfoResponseByToken> response = restTemplate.exchange(
+                REQUEST_USER_INFO_BY_TOKEN_URL, HttpMethod.GET, entity, UserInfoResponseByToken.class);
+        return response.getBody();
     }
 }

@@ -1,5 +1,7 @@
 package com.amiao.oauth_backend.controller;
 
+import com.amiao.oauth_backend.entity.ResponseResult;
+import com.amiao.oauth_backend.entity.UserInfoResponseByToken;
 import com.amiao.oauth_backend.service.OAuthServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +17,14 @@ public class OAuthController {
     private OAuthServiceImpl service;
 
     @RequestMapping("/{code}")
-    public ResponseEntity getString(@PathVariable String code) {
-        return ResponseEntity.ok(service.getAccessTokenFromGithub(code));
+    public ResponseEntity getUserInfoFromGithub(@PathVariable String code) {
+        String accessTokenFromGithub = service.getAccessTokenFromGithub(code);
+        System.out.println(accessTokenFromGithub);
+        UserInfoResponseByToken result = getUserInfoByAccessToken(accessTokenFromGithub);
+        return ResponseEntity.ok(new ResponseResult<Object>("success", result));
+    }
+
+    private UserInfoResponseByToken getUserInfoByAccessToken(String accessTokenFromGithub) {
+        return service.getUserInfoFromGithub(accessTokenFromGithub);
     }
 }
